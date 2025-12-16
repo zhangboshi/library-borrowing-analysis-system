@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Library Borrowing Analysis</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css">
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; background: #f7f7f7; }
+    header { margin-bottom: 24px; }
+    h1 { margin-bottom: 8px; }
+    section { background: #fff; padding: 16px; margin-bottom: 16px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);}    
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+    label { display: block; font-weight: 600; margin-bottom: 4px; }
+    input, select, button { padding: 8px; width: 100%; box-sizing: border-box; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    th, td { padding: 8px; border-bottom: 1px solid #e5e5e5; text-align: left; }
+    th { background: #fafafa; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .muted { color: #666; font-size: 14px; }
+    .tag { padding: 4px 6px; border-radius: 4px; background: #eef3ff; color: #2d4ba0; font-weight: 600; }
+    .tag.returned { background: #e7f7ed; color: #2f9a63; }
+    .tag.borrowed { background: #fff4e5; color: #b87012; }
+    .tag.deleted { background: #fce8e8; color: #c0392b; }
+    #status { max-width: 200px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Library Borrowing Analysis System</h1>
+    <p class="muted">Upload CSV/Excel to manage readers, books, and borrow records. Use filters to export or batch update records.</p>
+  </header>
+
+  <section>
+    <h2>Import data</h2>
+    <div class="grid">
+      <div>
+        <label for="reader-file">Readers (CSV/XLSX)</label>
+        <input type="file" id="reader-file" accept=".csv,.xlsx">
+        <p class="muted">Required columns: <code>name</code>, <code>email</code>; optional: <code>phone</code></p>
+        <button id="import-readers">Import readers</button>
+      </div>
+      <div>
+        <label for="book-file">Books (CSV/XLSX)</label>
+        <input type="file" id="book-file" accept=".csv,.xlsx">
+        <p class="muted">Required: <code>title</code>, <code>category</code>; optional: <code>author</code></p>
+        <button id="import-books">Import books</button>
+      </div>
+      <div>
+        <label for="borrow-file">Borrow records (CSV/XLSX)</label>
+        <input type="file" id="borrow-file" accept=".csv,.xlsx">
+        <p class="muted">Required: <code>reader_email</code>, <code>book_title</code>, <code>borrowed_at</code>; optional: <code>category</code>, <code>due_at</code>, <code>status</code></p>
+        <button id="import-borrows">Import borrows</button>
+      </div>
+    </div>
+    <div id="import-result" class="muted" style="margin-top: 12px;"></div>
+  </section>
+
+  <section>
+    <h2>Borrow records</h2>
+    <div class="grid">
+      <div>
+        <label for="start-date">Start date</label>
+        <input type="datetime-local" id="start-date">
+      </div>
+      <div>
+        <label for="end-date">End date</label>
+        <input type="datetime-local" id="end-date">
+      </div>
+      <div>
+        <label for="category">Category</label>
+        <input type="text" id="category" placeholder="Programming, Data...">
+      </div>
+      <div>
+        <label for="status">Status</label>
+        <select id="status">
+          <option value="">All</option>
+          <option value="borrowed">Borrowed</option>
+          <option value="returned">Returned</option>
+        </select>
+      </div>
+    </div>
+    <div class="actions" style="margin-top: 12px;">
+      <button id="refresh">Refresh</button>
+      <button id="export-csv">Export CSV</button>
+      <button id="export-xlsx">Export Excel</button>
+      <button id="batch-return">Batch return</button>
+      <button id="batch-delete">Batch delete (soft)</button>
+    </div>
+
+    <table id="borrow-table">
+      <thead>
+        <tr>
+          <th><input type="checkbox" id="select-all"></th>
+          <th>ID</th>
+          <th>Reader</th>
+          <th>Book</th>
+          <th>Category</th>
+          <th>Status</th>
+          <th>Borrowed at</th>
+          <th>Due at</th>
+          <th>Returned at</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <script src="/static/main.js"></script>
+</body>
+</html>
