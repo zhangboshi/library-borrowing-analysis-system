@@ -10,6 +10,7 @@ import com.example.library.service.TokenService;
 import com.example.library.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.util.DigestUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -53,6 +54,15 @@ public class AuthController {
         String token = jwtUtil.generateToken(user.getUsername(), user.getRole());
         tokenService.storeToken(token, user.getUsername(), expireHours);
         return ApiResponse.success(Map.of("token", token));
+    }
+
+    @PostMapping("/logout")
+    public ApiResponse<Void> logout(@RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authHeader) {
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            tokenService.invalidateToken(token);
+        }
+        return ApiResponse.success();
     }
 
     @GetMapping("/me")

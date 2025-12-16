@@ -5,6 +5,7 @@
 1. 准备数据库  
    - 启动本地 MySQL 8，创建并授权账号（默认 `root/root`，可在 `server/src/main/resources/application.yml` 调整）。  
    - 执行初始化脚本：`mysql -u root -p < sql/init.sql`。
+   - 如需 Redis：启动本地 Redis（默认 `localhost:6379`，可在 `application.yml` 调整）。
 2. 启动后端  
    - 进入 `server` 目录：`cd server`  
    - 确保可以访问 Maven Central（若受限需配置镜像）。  

@@ -44,7 +44,7 @@ public class AuthInterceptor implements HandlerInterceptor {
         }
 
         // Allow login and health endpoints
-        if (antPathMatcher.match("/api/auth/login", path) || antPathMatcher.match("/api/health", path)) {
+        if (antPathMatcher.match("/api/auth/login", path) || antPathMatcher.match("/api/auth/logout", path) || antPathMatcher.match("/api/health", path)) {
             return true;
         }
 

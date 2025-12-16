@@ -7,3 +7,7 @@ export function login(data) {
 export function fetchMe() {
   return request.get('/api/auth/me');
 }
+
+export function logoutApi() {
+  return request.post('/api/auth/logout');
+}

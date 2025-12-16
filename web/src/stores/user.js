@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import { fetchMe } from '@/api/auth';
+import { fetchMe, logoutApi } from '@/api/auth';
 import { clearToken } from '@/utils/auth';
 
 export const useUserStore = defineStore('user', () => {
@@ -12,6 +12,7 @@ export const useUserStore = defineStore('user', () => {
   };
 
   const logout = () => {
+    logoutApi().catch(() => {});
     clearToken();
     user.value = null;
   };
