@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Library Borrowing Analysis</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f6f7fb; color: #222; }
+    header { background: #1f4b99; color: #fff; padding: 16px 24px; }
+    main { padding: 24px; display: grid; gap: 16px; }
+    section { background: #fff; border-radius: 8px; padding: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
+    h1, h2 { margin: 0 0 12px; }
+    form { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+    label { display: flex; flex-direction: column; font-size: 14px; color: #444; }
+    input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; min-width: 180px; }
+    button { padding: 8px 14px; border: none; border-radius: 4px; background: #1f4b99; color: #fff; cursor: pointer; }
+    button[disabled] { background: #b7c2d0; cursor: not-allowed; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    th, td { border: 1px solid #e3e6ec; padding: 8px; text-align: left; }
+    th { background: #f1f3f8; }
+    .status-pill { padding: 4px 8px; border-radius: 12px; font-size: 12px; }
+    .status-open { background: #e6f3ff; color: #1f4b99; }
+    .status-returned { background: #e8f6ec; color: #1e8842; }
+    .muted { color: #666; font-size: 14px; }
+    .flex { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .chip { background: #e6ecf5; padding: 6px 10px; border-radius: 16px; font-size: 13px; }
+    .error { color: #b00020; }
+    .success { color: #1e8842; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>馆藏借阅审计控制台</h1>
+    <div id="user-info" class="flex"></div>
+  </header>
+  <main>
+    <section>
+      <h2>登录</h2>
+      <form id="login-form">
+        <label>用户名
+          <input type="text" id="username" required value="admin" />
+        </label>
+        <label>密码
+          <input type="password" id="password" required value="password" />
+        </label>
+        <button type="submit">登录</button>
+        <span id="login-status" class="muted"></span>
+      </form>
+    </section>
+
+    <section>
+      <div class="flex">
+        <h2>借阅记录</h2>
+        <span class="muted">新增/归还仅 STAFF 或 ADMIN 可用</span>
+      </div>
+      <form id="create-form">
+        <label>图书标题
+          <input type="text" id="book-title" required />
+        </label>
+        <label>借阅人
+          <input type="text" id="borrower-name" required />
+        </label>
+        <label>到期时间 (可选)
+          <input type="datetime-local" id="due-date" />
+        </label>
+        <button type="submit">新增借阅</button>
+        <span id="create-status" class="muted"></span>
+      </form>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>图书</th>
+            <th>借阅人</th>
+            <th>借出时间</th>
+            <th>到期时间</th>
+            <th>状态</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="borrowings-body">
+          <tr><td colspan="7" class="muted">请先登录以查看数据</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <div class="flex">
+        <h2>操作审计</h2>
+        <span class="muted">仅 STAFF/ADMIN 可见</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>操作人</th>
+            <th>借阅ID</th>
+            <th>动作</th>
+            <th>详情</th>
+            <th>时间</th>
+          </tr>
+        </thead>
+        <tbody id="logs-body">
+          <tr><td colspan="6" class="muted">请先登录以查看数据</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <script>
+    const state = { token: null, roles: [] };
+
+    const userInfoEl = document.getElementById('user-info');
+    const loginForm = document.getElementById('login-form');
+    const loginStatus = document.getElementById('login-status');
+    const borrowingsBody = document.getElementById('borrowings-body');
+    const createForm = document.getElementById('create-form');
+    const createStatus = document.getElementById('create-status');
+    const logsBody = document.getElementById('logs-body');
+
+    const isStaffOrAdmin = () => state.roles.some(r => r.name === 'ADMIN' || r.name === 'STAFF');
+
+    function showUserInfo(user) {
+      userInfoEl.innerHTML = '';
+      if (!state.token) {
+        userInfoEl.innerHTML = '<span class="muted">未登录</span>';
+        return;
+      }
+      const name = document.createElement('span');
+      name.textContent = `当前用户：${user.username}`;
+      const roles = document.createElement('div');
+      roles.className = 'flex';
+      roles.innerHTML = '<span class="muted">角色：</span>' + user.roles.map(r => `<span class="chip">${r.name}</span>`).join('');
+      userInfoEl.append(name, roles);
+    }
+
+    function authHeaders() {
+      return state.token ? { 'Authorization': `Bearer ${state.token}`, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' };
+    }
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      loginStatus.textContent = '正在登录...';
+      try {
+        const res = await fetch('/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: document.getElementById('username').value, password: document.getElementById('password').value })
+        });
+        if (!res.ok) throw new Error('登录失败');
+        const data = await res.json();
+        state.token = data.token;
+        state.roles = data.user.roles || [];
+        loginStatus.textContent = '登录成功';
+        loginStatus.className = 'success';
+        showUserInfo(data.user);
+        toggleRoleUI();
+        await fetchBorrowings();
+        await fetchLogs();
+      } catch (err) {
+        loginStatus.textContent = err.message;
+        loginStatus.className = 'error';
+      }
+    });
+
+    function toggleRoleUI() {
+      const canEdit = isStaffOrAdmin();
+      createForm.querySelectorAll('input, button').forEach(el => { el.disabled = !canEdit; });
+      document.querySelectorAll('.return-btn').forEach(btn => { btn.disabled = !canEdit; });
+    }
+
+    async function fetchBorrowings() {
+      borrowingsBody.innerHTML = '<tr><td colspan="7" class="muted">加载中...</td></tr>';
+      try {
+        const res = await fetch('/borrowings', { headers: authHeaders() });
+        if (res.status === 401) throw new Error('请先登录');
+        const data = await res.json();
+        if (!Array.isArray(data) || data.length === 0) {
+          borrowingsBody.innerHTML = '<tr><td colspan="7" class="muted">暂无借阅记录</td></tr>';
+          return;
+        }
+        borrowingsBody.innerHTML = '';
+        data.forEach(item => {
+          const tr = document.createElement('tr');
+          const status = item.returned_at ? '<span class="status-pill status-returned">已归还</span>' : '<span class="status-pill status-open">借阅中</span>';
+          tr.innerHTML = `
+            <td>${item.id}</td>
+            <td>${item.book_title}</td>
+            <td>${item.borrower_name}</td>
+            <td>${new Date(item.borrowed_at).toLocaleString()}</td>
+            <td>${item.due_date ? new Date(item.due_date).toLocaleString() : '-'}</td>
+            <td>${status}</td>
+            <td>
+              <button class="return-btn" data-id="${item.id}" ${item.returned_at ? 'disabled' : ''}>标记归还</button>
+            </td>
+          `;
+          borrowingsBody.appendChild(tr);
+        });
+        document.querySelectorAll('.return-btn').forEach(btn => {
+          btn.addEventListener('click', () => returnBorrowing(btn.dataset.id));
+        });
+        toggleRoleUI();
+      } catch (err) {
+        borrowingsBody.innerHTML = `<tr><td colspan="7" class="error">${err.message}</td></tr>`;
+      }
+    }
+
+    createForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!isStaffOrAdmin()) { createStatus.textContent = '权限不足'; createStatus.className = 'error'; return; }
+      createStatus.textContent = '提交中...';
+      try {
+        const payload = {
+          book_title: document.getElementById('book-title').value,
+          borrower_name: document.getElementById('borrower-name').value,
+          due_date: document.getElementById('due-date').value || null,
+        };
+        const res = await fetch('/borrowings', {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error('新增失败');
+        createStatus.textContent = '新增成功';
+        createStatus.className = 'success';
+        createForm.reset();
+        await fetchBorrowings();
+        await fetchLogs();
+      } catch (err) {
+        createStatus.textContent = err.message;
+        createStatus.className = 'error';
+      }
+    });
+
+    async function returnBorrowing(id) {
+      if (!isStaffOrAdmin()) { alert('权限不足'); return; }
+      try {
+        const res = await fetch(`/borrowings/${id}/return`, { method: 'POST', headers: authHeaders() });
+        if (!res.ok) throw new Error('归还失败');
+        await fetchBorrowings();
+        await fetchLogs();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    async function fetchLogs() {
+      if (!isStaffOrAdmin()) {
+        logsBody.innerHTML = '<tr><td colspan="6" class="muted">当前角色无权查看</td></tr>';
+        return;
+      }
+      logsBody.innerHTML = '<tr><td colspan="6" class="muted">加载中...</td></tr>';
+      try {
+        const res = await fetch('/audit-logs', { headers: authHeaders() });
+        if (!res.ok) throw new Error('获取审计日志失败');
+        const data = await res.json();
+        if (!Array.isArray(data) || data.length === 0) {
+          logsBody.innerHTML = '<tr><td colspan="6" class="muted">暂无日志</td></tr>';
+          return;
+        }
+        logsBody.innerHTML = '';
+        data.forEach(log => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${log.id}</td>
+            <td>${log.user ? log.user.username : '-'}</td>
+            <td>${log.borrowing_id}</td>
+            <td>${log.action}</td>
+            <td>${log.details || ''}</td>
+            <td>${new Date(log.created_at).toLocaleString()}</td>
+          `;
+          logsBody.appendChild(tr);
+        });
+      } catch (err) {
+        logsBody.innerHTML = `<tr><td colspan="6" class="error">${err.message}</td></tr>`;
+      }
+    }
+
+    toggleRoleUI();
+  </script>
+</body>
+</html>
