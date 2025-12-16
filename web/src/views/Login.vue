@@ -19,6 +19,7 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { login } from '@/api/auth';
+import { setToken } from '@/utils/auth';
 import { ElMessage } from 'element-plus';
 
 const router = useRouter();
@@ -39,9 +40,10 @@ const onSubmit = () => {
     loading.value = true;
     try {
       const res = await login(form.value);
-      localStorage.setItem('token', res.data.token);
+      setToken(res.data.token);
       ElMessage.success('登录成功');
-      router.push('/dashboard');
+      const redirect = router.currentRoute.value.query.redirect || '/dashboard';
+      router.push(redirect);
     } finally {
       loading.value = false;
     }

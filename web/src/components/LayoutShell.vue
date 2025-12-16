@@ -21,13 +21,14 @@
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
+import { clearToken } from '@/utils/auth';
 
 const route = useRoute();
 const router = useRouter();
 const active = route.path;
 
 const logout = () => {
-  localStorage.removeItem('token');
+  clearToken();
   router.push('/login');
 };
 </script>
