@@ -1,0 +1,21 @@
+# Maven
+/server/target/
+
+# Node
+/web/node_modules/
+/web/dist/
+
+# IntelliJ / Eclipse
+.idea/
+*.iml
+*.ipr
+*.iws
+.project
+.classpath
+.settings/
+
+# Logs
+*.log
+
+# Mac
+.DS_Store
