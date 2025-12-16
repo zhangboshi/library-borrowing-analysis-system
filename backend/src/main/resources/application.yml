@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: library-borrowing-analysis-system
+  datasource:
+    url: jdbc:h2:mem:library;DB_CLOSE_DELAY=-1
+    driverClassName: org.h2.Driver
+    username: sa
+    password: password
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+  profiles:
+    active: ${APP_PROFILE:dev}
+
+logging:
+  level:
+    root: INFO
