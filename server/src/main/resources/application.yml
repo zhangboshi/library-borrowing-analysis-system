@@ -30,3 +30,8 @@ logging:
   level:
     root: info
     com.example.library: debug
+
+app:
+  jwt:
+    secret: "library-analysis-demo-secret" # 请根据生产环境修改
+    expire-hours: 12

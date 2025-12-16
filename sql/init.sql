@@ -50,6 +50,16 @@ CREATE TABLE borrow_record (
     INDEX idx_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- User table for authentication
+DROP TABLE IF EXISTS user;
+CREATE TABLE user (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(64) NOT NULL,
+    role VARCHAR(50) NOT NULL DEFAULT 'ADMIN',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- Seed readers
 INSERT INTO reader (name, type, department, email, phone) VALUES
 ('Alice Zhang', 'STUDENT', 'Computer Science', 'alice@example.com', '13800000001'),
@@ -62,6 +72,10 @@ INSERT INTO reader (name, type, department, email, phone) VALUES
 ('Henry Guo', 'STAFF', 'Library', 'henry@example.com', '13800000008'),
 ('Ivy Xu', 'STAFF', 'Library', 'ivy@example.com', '13800000009'),
 ('Jackie Ma', 'TEACHER', 'Literature', 'jackie@example.com', '13800000010');
+
+-- Seed users (password is plain text 'admin123' hashed by MD5 for demo only)
+INSERT INTO user (username, password, role) VALUES
+('admin', MD5('admin123'), 'ADMIN');
 
 -- Seed books
 INSERT INTO book (title, author, category, isbn, publish_year, total_copies) VALUES
