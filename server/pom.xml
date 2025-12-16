@@ -11,9 +11,9 @@
     </parent>
 
     <groupId>com.example</groupId>
-    <artifactId>library-borrowing-analysis-server</artifactId>
+    <artifactId>library-borrowing-analysis</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>library-borrowing-analysis-server</name>
+    <name>library-borrowing-analysis</name>
     <description>Library Borrowing Analysis backend service</description>
 
     <properties>
