@@ -10,7 +10,10 @@
     <el-container>
       <el-header class="header">
         <div class="title">图书借阅行为统计与可视化</div>
-        <el-button type="text" @click="logout">退出</el-button>
+        <div class="user-info">
+          <span class="role" v-if="userStore.user">角色：{{ userStore.user.role }}</span>
+          <el-button type="text" @click="logout">退出</el-button>
+        </div>
       </el-header>
       <el-main class="main">
         <slot />
@@ -21,14 +24,15 @@
 
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
-import { clearToken } from '@/utils/auth';
+import { useUserStore } from '@/stores/user';
 
 const route = useRoute();
 const router = useRouter();
 const active = route.path;
+const userStore = useUserStore();
 
 const logout = () => {
-  clearToken();
+  userStore.logout();
   router.push('/login');
 };
 </script>
@@ -63,5 +67,13 @@ const logout = () => {
 .title {
   font-size: 16px;
   font-weight: 600;
+}
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.role {
+  color: #606266;
 }
 </style>

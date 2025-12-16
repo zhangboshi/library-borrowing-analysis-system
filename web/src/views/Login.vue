@@ -18,9 +18,10 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { login } from '@/api/auth';
+import { login, fetchMe } from '@/api/auth';
 import { setToken } from '@/utils/auth';
 import { ElMessage } from 'element-plus';
+import { useUserStore } from '@/stores/user';
 
 const router = useRouter();
 const loading = ref(false);
@@ -29,6 +30,7 @@ const form = ref({
   username: 'admin',
   password: 'admin123',
 });
+const userStore = useUserStore();
 const rules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
@@ -41,6 +43,7 @@ const onSubmit = () => {
     try {
       const res = await login(form.value);
       setToken(res.data.token);
+      await userStore.loadUser();
       ElMessage.success('登录成功');
       const redirect = router.currentRoute.value.query.redirect || '/dashboard';
       router.push(redirect);

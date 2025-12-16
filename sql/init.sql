@@ -75,7 +75,9 @@ INSERT INTO reader (name, type, department, email, phone) VALUES
 
 -- Seed users (password is plain text 'admin123' hashed by MD5 for demo only)
 INSERT INTO user (username, password, role) VALUES
-('admin', MD5('admin123'), 'ADMIN');
+('admin', MD5('admin123'), 'ADMIN'),
+('librarian', MD5('lib123'), 'STAFF'),
+('viewer', MD5('viewer123'), 'VIEWER');
 
 -- Seed books
 INSERT INTO book (title, author, category, isbn, publish_year, total_copies) VALUES

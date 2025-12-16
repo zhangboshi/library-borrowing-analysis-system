@@ -35,3 +35,10 @@ app:
   jwt:
     secret: "library-analysis-demo-secret" # 请根据生产环境修改
     expire-hours: 12
+
+spring:
+  redis:
+    host: localhost
+    port: 6379
+    database: 0
+    # password: your_redis_password

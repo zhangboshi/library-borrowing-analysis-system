@@ -6,6 +6,7 @@ import com.example.library.common.PageResponse;
 import com.example.library.entity.Book;
 import com.example.library.entity.BorrowRecord;
 import com.example.library.entity.Reader;
+import com.example.library.common.RequireRole;
 import com.example.library.model.dto.BorrowRecordCreateRequest;
 import com.example.library.model.dto.BorrowRecordQuery;
 import com.example.library.model.dto.BorrowRecordReturnRequest;
@@ -64,6 +65,7 @@ public class BorrowRecordController {
     }
 
     @PostMapping
+    @RequireRole({"ADMIN", "STAFF"})
     public ApiResponse<BorrowRecordVO> createBorrowRecord(@Valid @RequestBody BorrowRecordCreateRequest request) {
         if (request.getBorrowTime() != null && request.getDueTime() != null && request.getBorrowTime().isAfter(request.getDueTime())) {
             throw new IllegalArgumentException("dueTime must be after borrowTime");
@@ -75,6 +77,7 @@ public class BorrowRecordController {
     }
 
     @PostMapping("/{id}/return")
+    @RequireRole({"ADMIN", "STAFF"})
     public ApiResponse<BorrowRecordVO> returnBorrowRecord(
             @PathVariable @Min(value = 1, message = "id must be positive") Long id,
             @Valid @RequestBody(required = false) BorrowRecordReturnRequest request) {

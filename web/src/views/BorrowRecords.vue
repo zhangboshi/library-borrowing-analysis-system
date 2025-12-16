@@ -24,7 +24,7 @@
         </el-select>
         <el-button type="primary" size="small" @click="loadData">查询</el-button>
         <el-button size="small" @click="resetFilters">重置</el-button>
-        <el-button type="success" size="small" @click="openCreate">新增借阅</el-button>
+        <el-button type="success" size="small" @click="openCreate" v-if="isStaff()">新增借阅</el-button>
       </div>
 
       <el-table :data="records" border v-loading="loading">
@@ -42,7 +42,7 @@
         <el-table-column label="操作" width="120">
           <template #default="{ row }">
             <el-button
-              v-if="row.status !== 'RETURNED'"
+              v-if="row.status !== 'RETURNED' && isStaff()"
               type="primary"
               size="small"
               @click="handleReturn(row)"
@@ -104,6 +104,7 @@ import {
   fetchBooks,
 } from '@/api/borrow';
 import dayjs from 'dayjs';
+import { useUserStore } from '@/stores/user';
 
 const page = ref(1);
 const pageSize = 10;
@@ -149,6 +150,9 @@ const statusTag = (status) => {
   };
   return map[status] || 'info';
 };
+
+const userStore = useUserStore();
+const isStaff = () => ['ADMIN', 'STAFF'].includes(userStore.user?.role);
 
 const buildParams = () => {
   const params = { page: page.value, pageSize };

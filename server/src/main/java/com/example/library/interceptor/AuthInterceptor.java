@@ -4,6 +4,8 @@ import com.example.library.common.ApiResponse;
 import com.example.library.common.CurrentUser;
 import com.example.library.common.CurrentUserHolder;
 import com.example.library.common.JwtUtil;
+import com.example.library.common.RequireRole;
+import com.example.library.service.TokenService;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -11,19 +13,24 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.util.StringUtils;
+import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Objects;
 
 @Component
 public class AuthInterceptor implements HandlerInterceptor {
 
     private final JwtUtil jwtUtil;
     private final AntPathMatcher antPathMatcher = new AntPathMatcher();
+    private final TokenService tokenService;
 
-    public AuthInterceptor(JwtUtil jwtUtil) {
+    public AuthInterceptor(JwtUtil jwtUtil, TokenService tokenService) {
         this.jwtUtil = jwtUtil;
+        this.tokenService = tokenService;
     }
 
     @Override
@@ -51,6 +58,25 @@ public class AuthInterceptor implements HandlerInterceptor {
             Claims claims = jwtUtil.parse(token);
             CurrentUser user = new CurrentUser(claims.get("username", String.class), claims.get("role", String.class));
             CurrentUserHolder.set(user);
+            if (!tokenService.isTokenValid(token)) {
+                writeUnauthorized(response, "Token expired or revoked");
+                return false;
+            }
+            if (handler instanceof HandlerMethod hm) {
+                RequireRole roleAnno = hm.getMethodAnnotation(RequireRole.class);
+                if (roleAnno == null) {
+                    roleAnno = hm.getBeanType().getAnnotation(RequireRole.class);
+                }
+                if (roleAnno != null) {
+                    boolean allowed = List.of(roleAnno.value()).stream()
+                            .filter(Objects::nonNull)
+                            .anyMatch(r -> r.equalsIgnoreCase(user.getRole()));
+                    if (!allowed) {
+                        writeUnauthorized(response, "Forbidden");
+                        return false;
+                    }
+                }
+            }
             return true;
         } catch (Exception ex) {
             writeUnauthorized(response, "Invalid or expired token");

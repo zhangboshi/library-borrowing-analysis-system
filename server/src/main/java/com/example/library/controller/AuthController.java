@@ -6,6 +6,7 @@ import com.example.library.common.JwtUtil;
 import com.example.library.entity.User;
 import com.example.library.model.dto.LoginRequest;
 import com.example.library.model.vo.AuthUserVO;
+import com.example.library.service.TokenService;
 import com.example.library.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
@@ -26,10 +27,15 @@ public class AuthController {
 
     private final UserService userService;
     private final JwtUtil jwtUtil;
+    private final TokenService tokenService;
+    private final long expireHours;
 
-    public AuthController(UserService userService, JwtUtil jwtUtil) {
+    public AuthController(UserService userService, JwtUtil jwtUtil, TokenService tokenService,
+                          @Value("${app.jwt.expire-hours:12}") long expireHours) {
         this.userService = userService;
         this.jwtUtil = jwtUtil;
+        this.tokenService = tokenService;
+        this.expireHours = expireHours;
     }
 
     @PostMapping("/login")
@@ -45,6 +51,7 @@ public class AuthController {
             return ApiResponse.failure("Invalid username or password");
         }
         String token = jwtUtil.generateToken(user.getUsername(), user.getRole());
+        tokenService.storeToken(token, user.getUsername(), expireHours);
         return ApiResponse.success(Map.of("token", token));
     }
 
