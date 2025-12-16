@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Library Borrowing Records</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 16px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background: #f4f4f4; }
+    .status-overdue { color: #c0392b; font-weight: bold; }
+    .status-borrowed { color: #2c3e50; }
+    .status-returned { color: #16a085; }
+    button { padding: 6px 12px; }
+    .error { color: #c0392b; margin-top: 8px; }
+    .meta { margin-top: 8px; color: #555; }
+  </style>
+</head>
+<body>
+  <h1>Borrowing Records</h1>
+  <div id="meta" class="meta"></div>
+  <div id="error" class="error"></div>
+  <table id="records-table">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>User</th>
+        <th>Book</th>
+        <th>Borrowed</th>
+        <th>Due</th>
+        <th>Overdue Days</th>
+        <th>Fine</th>
+        <th>Renew Count</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <script>
+    let meta = { max_renewals: 0, fine_per_day_cents: 0 };
+
+    function formatCurrency(cents) {
+      return `￥${(cents / 100).toFixed(2)}`;
+    }
+
+    async function loadRecords() {
+      const errorDiv = document.getElementById('error');
+      errorDiv.textContent = '';
+      try {
+        const res = await fetch('/api/records');
+        const payload = await res.json();
+        meta = payload.meta;
+        renderMeta();
+        renderTable(payload.data);
+      } catch (err) {
+        errorDiv.textContent = 'Failed to load records: ' + err.message;
+      }
+    }
+
+    function renderMeta() {
+      const div = document.getElementById('meta');
+      div.textContent = `Max renewals: ${meta.max_renewals}, Renewal period: ${meta.renewal_days} days, Fine per day: ${formatCurrency(meta.fine_per_day_cents)}`;
+    }
+
+    function renderTable(records) {
+      const tbody = document.querySelector('#records-table tbody');
+      tbody.innerHTML = '';
+      records.forEach(record => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${record.id}</td>
+          <td>${record.user_name}</td>
+          <td>${record.book_title}</td>
+          <td>${record.borrow_date}</td>
+          <td>${record.due_date}</td>
+          <td>${record.overdue_days}</td>
+          <td>${formatCurrency(record.fine_cents)}</td>
+          <td>${record.renew_count}</td>
+          <td class="status-${record.status}">${record.status}</td>
+          <td></td>
+        `;
+        const actionCell = tr.lastElementChild;
+        const renewBtn = document.createElement('button');
+        renewBtn.textContent = 'Renew';
+        renewBtn.disabled = record.status === 'returned' || record.renew_count >= meta.max_renewals;
+        renewBtn.addEventListener('click', () => renewRecord(record.id));
+        actionCell.appendChild(renewBtn);
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function renewRecord(id) {
+      const errorDiv = document.getElementById('error');
+      errorDiv.textContent = '';
+      try {
+        const res = await fetch(`/api/records/${id}/renew`, { method: 'POST' });
+        if (!res.ok) {
+          const payload = await res.json();
+          throw new Error(payload.error || 'Renew failed');
+        }
+        await loadRecords();
+      } catch (err) {
+        errorDiv.textContent = err.message;
+      }
+    }
+
+    loadRecords();
+  </script>
+</body>
+</html>
