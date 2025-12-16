@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -25,6 +26,10 @@ public class BorrowRecord {
     private LocalDateTime returnTime;
 
     private String status;
+
+    private Integer renewCount;
+
+    private BigDecimal fineAmount;
 
     private LocalDateTime createdAt;
 }

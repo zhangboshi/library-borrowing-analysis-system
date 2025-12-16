@@ -11,7 +11,9 @@ import com.example.library.service.BorrowRecordService;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 
 @Service
 public class BorrowRecordServiceImpl extends ServiceImpl<BorrowRecordMapper, BorrowRecord> implements BorrowRecordService {
@@ -25,6 +27,8 @@ public class BorrowRecordServiceImpl extends ServiceImpl<BorrowRecordMapper, Bor
         record.setDueTime(request.getDueTime());
         record.setReturnTime(null);
         record.setStatus(StringUtils.hasText(request.getStatus()) ? request.getStatus() : "BORROWED");
+        record.setRenewCount(request.getRenewCount() == null ? 0 : request.getRenewCount());
+        record.setFineAmount(BigDecimal.ZERO);
         save(record);
         return record;
     }
@@ -64,5 +68,43 @@ public class BorrowRecordServiceImpl extends ServiceImpl<BorrowRecordMapper, Bor
         wrapper.orderByDesc(BorrowRecord::getBorrowTime);
         Page<BorrowRecord> page = new Page<>(query.getPage(), query.getPageSize());
         return page(page, wrapper);
+    }
+
+    @Override
+    public BorrowRecord renewBorrowRecord(Long id, int extraDays) {
+        BorrowRecord record = getById(id);
+        if (record == null) {
+            return null;
+        }
+        if ("RETURNED".equals(record.getStatus()) || "LOST".equals(record.getStatus())) {
+            return record;
+        }
+        int renewCount = record.getRenewCount() == null ? 0 : record.getRenewCount();
+        if (renewCount >= 2) {
+            return record;
+        }
+        record.setRenewCount(renewCount + 1);
+        record.setDueTime(record.getDueTime().plusDays(extraDays));
+        updateById(record);
+        return record;
+    }
+
+    @Override
+    public int refreshOverdueAndFines() {
+        LocalDateTime now = LocalDateTime.now();
+        LambdaQueryWrapper<BorrowRecord> wrapper = new LambdaQueryWrapper<>();
+        wrapper.ne(BorrowRecord::getStatus, "RETURNED")
+                .lt(BorrowRecord::getDueTime, now);
+        var list = list(wrapper);
+        int updated = 0;
+        for (BorrowRecord r : list) {
+            long daysOverdue = ChronoUnit.DAYS.between(r.getDueTime().toLocalDate(), now.toLocalDate());
+            BigDecimal fine = BigDecimal.valueOf(daysOverdue).max(BigDecimal.ZERO);
+            r.setStatus("OVERDUE");
+            r.setFineAmount(fine);
+            updateById(r);
+            updated++;
+        }
+        return updated;
     }
 }

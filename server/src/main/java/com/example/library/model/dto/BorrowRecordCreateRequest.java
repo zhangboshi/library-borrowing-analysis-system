@@ -31,4 +31,6 @@ public class BorrowRecordCreateRequest {
 
     @Pattern(regexp = "BORROWED|RETURNED|OVERDUE|LOST", message = "status must be BORROWED, RETURNED, OVERDUE or LOST")
     private String status;
+
+    private Integer renewCount = 0;
 }

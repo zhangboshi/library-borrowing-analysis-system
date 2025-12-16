@@ -18,5 +18,7 @@ public class BorrowRecordVO {
     private LocalDateTime dueTime;
     private LocalDateTime returnTime;
     private String status;
+    private Integer renewCount;
+    private java.math.BigDecimal fineAmount;
     private LocalDateTime createdAt;
 }

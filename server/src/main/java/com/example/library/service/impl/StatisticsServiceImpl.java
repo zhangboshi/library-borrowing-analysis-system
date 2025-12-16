@@ -11,6 +11,10 @@ import com.example.library.service.StatisticsService;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import org.springframework.data.redis.core.StringRedisTemplate;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -20,14 +24,34 @@ import java.util.stream.Collectors;
 public class StatisticsServiceImpl implements StatisticsService {
 
     private final StatisticsMapper statisticsMapper;
+    private final StringRedisTemplate redisTemplate;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public StatisticsServiceImpl(StatisticsMapper statisticsMapper) {
+    public StatisticsServiceImpl(StatisticsMapper statisticsMapper, StringRedisTemplate redisTemplate) {
         this.statisticsMapper = statisticsMapper;
+        this.redisTemplate = redisTemplate;
     }
 
     @Override
     public OverviewVO overview() {
+        String cacheKey = "stats:overview";
+        try {
+            String cached = redisTemplate.opsForValue().get(cacheKey);
+            if (StringUtils.hasText(cached)) {
+                Map<String, Long> cachedMap = objectMapper.readValue(cached, new TypeReference<>() {});
+                return buildOverview(cachedMap);
+            }
+        } catch (Exception ignored) {
+        }
         Map<String, Long> data = statisticsMapper.overview();
+        try {
+            redisTemplate.opsForValue().set(cacheKey, objectMapper.writeValueAsString(data), Duration.ofMinutes(5));
+        } catch (Exception ignored) {
+        }
+        return buildOverview(data);
+    }
+
+    private OverviewVO buildOverview(Map<String, Long> data) {
         return OverviewVO.builder()
                 .totalBorrow(data.getOrDefault("totalBorrow", 0L))
                 .totalReaders(data.getOrDefault("totalReaders", 0L))

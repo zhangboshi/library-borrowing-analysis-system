@@ -13,4 +13,8 @@ public interface BorrowRecordService extends IService<BorrowRecord> {
     BorrowRecord returnBorrowRecord(Long id, java.time.LocalDateTime returnTime);
 
     Page<BorrowRecord> pageBorrowRecords(BorrowRecordQuery query);
+
+    BorrowRecord renewBorrowRecord(Long id, int extraDays);
+
+    int refreshOverdueAndFines();
 }

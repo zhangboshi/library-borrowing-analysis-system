@@ -41,6 +41,8 @@ CREATE TABLE borrow_record (
     due_time DATETIME NOT NULL,
     return_time DATETIME NULL,
     status ENUM('BORROWED', 'RETURNED', 'OVERDUE', 'LOST') NOT NULL DEFAULT 'BORROWED',
+    renew_count INT NOT NULL DEFAULT 0,
+    fine_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_borrow_reader FOREIGN KEY (reader_id) REFERENCES reader(id),
     CONSTRAINT fk_borrow_book FOREIGN KEY (book_id) REFERENCES book(id),
