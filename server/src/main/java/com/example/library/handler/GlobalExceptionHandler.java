@@ -44,6 +44,11 @@ public class GlobalExceptionHandler {
         return ApiResponse.failure(message);
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ApiResponse<Void> handleIllegalArgument(IllegalArgumentException ex) {
+        return ApiResponse.failure(ex.getMessage());
+    }
+
     @ExceptionHandler(Exception.class)
     public ApiResponse<Void> handleGenericException(Exception ex) {
         log.error("Unhandled exception", ex);
