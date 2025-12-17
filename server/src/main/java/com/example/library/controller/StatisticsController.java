@@ -22,7 +22,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/stats")
 @Validated
-@RequireRole({"ADMIN", "STAFF"})
+@RequireRole({"ADMIN", "STAFF", "VIEWER"})
 public class StatisticsController {
 
     private final StatisticsService statisticsService;

@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/borrow-records")
 @Validated
+@RequireRole({"ADMIN", "STAFF", "VIEWER"})
 public class BorrowRecordController {
 
     private final BorrowRecordService borrowRecordService;

@@ -38,11 +38,6 @@ public class AuthInterceptor implements HandlerInterceptor {
         String path = request.getRequestURI();
         String method = request.getMethod();
 
-        // Allow unauthenticated GET for listing endpoints
-        if ("GET".equalsIgnoreCase(method) && antPathMatcher.match("/api/borrow-records/**", path)) {
-            return true;
-        }
-
         // Allow login and health endpoints
         if (antPathMatcher.match("/api/auth/login", path) || antPathMatcher.match("/api/auth/logout", path) || antPathMatcher.match("/api/health", path)) {
             return true;

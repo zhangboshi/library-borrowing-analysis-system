@@ -17,7 +17,14 @@
 
 > 以上为占位说明，后续步骤与截图将在功能完善后更新。
 
-### 账号与鉴权
-- 初始化脚本会创建默认账号：`admin` / `admin123`（MD5 存储，仅用于示例，生产请改用强密码及加密方案）。
-- 登录：`POST /api/auth/login`，携带 `Authorization: Bearer <token>` 访问 `GET /api/auth/me`、借阅记录写接口（新增/归还）等需要鉴权的接口。
-- 列表查询接口（如读者、图书、借阅记录的 GET）默认不强制登录，方便演示。
+### 账号与鉴权（RBAC）
+- 初始化账号：
+  - 管理员：`admin` / `admin123`
+  - 馆员：`librarian` / `lib123`
+  - 访客：`viewer` / `viewer123`
+- 所有业务接口（除 `/api/health`、`/api/auth/login`、`/api/auth/logout`）均需携带 `Authorization: Bearer <token>`。
+- 角色能力：
+  - ADMIN：读写所有资源、用户管理、统计访问、借阅写操作。
+  - STAFF：借阅写操作、统计访问、资源读取。
+  - VIEWER：只读访问（读者/图书/借阅列表、统计）。
+- 退出：`POST /api/auth/logout`（会同时删除 Redis 中的 token）。

@@ -3,6 +3,7 @@ package com.example.library.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.library.common.ApiResponse;
 import com.example.library.common.PageResponse;
+import com.example.library.common.RequireRole;
 import com.example.library.entity.Book;
 import com.example.library.model.vo.BookVO;
 import com.example.library.service.BookService;
@@ -20,6 +21,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/books")
 @Validated
+@RequireRole({"ADMIN", "STAFF", "VIEWER"})
 public class BookController {
 
     private final BookService bookService;
